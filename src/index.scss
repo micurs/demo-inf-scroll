@@ -46,11 +46,18 @@ div#root {
 
   h1 {
     width: 100%;
-    font-size: 3.2em;
+    font-size: 30px;
+      padding: 4px 8px;
     line-height: 1.4;
-    padding: 0;
     margin: 0;
-    // border: solid 5px yellow;
+    display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    
+      div.small {
+        font-size: 0.6em;
+      }
   }
   div.scrollable {
     flex-grow: 1;
@@ -77,11 +84,12 @@ div#root {
       display: flex;
       flex-direction: row;
       flex-wrap: wrap;
+      justify-content: center;
 
       li.user-info {
         border-radius: 11px;
         box-sizing: border-box;
-        width: 400px;
+        width: 580px;
         margin: 8px 0px 0px 8px;
         padding: 0px 10px;
         display: flex;

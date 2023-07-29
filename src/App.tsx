@@ -5,8 +5,7 @@ import axios from 'axios';
 import './App.css'
 
 const loadMoreUsers = (page: number) => {
-  return axios.get('https://randomuser.me/api/?page=${page}&results=15&seed=rtx${page}')
-  .then((res) => {
+  return axios.get('https://randomuser.me/api/?page=${page}&results=20&seed=rtx${page}').then((res) => {
     return res.data;
   });
 };
@@ -21,17 +20,19 @@ interface UserInfo {
   };
 }
 
-function UserInfo({ user }: { user: UserInfo}) {
-  return <li className="user-info">
-    <img
-      src={user.picture.medium}
-      className='w-16 h-16 rounded-full border-2 border-green-600'
-      alt='user'
-    />
-    <div className='user-name'>
-      {user.name.first} {user.name.last}
-    </div>
-  </li>;
+function UserInfo({ user }: { user: UserInfo }) {
+  return (
+    <li className='user-info'>
+      <img
+        src={user.picture.medium}
+        className='w-16 h-16 rounded-full border-2 border-green-600'
+        alt='user'
+      />
+      <div className='user-name'>
+        {user.name.first} {user.name.last}
+      </div>
+    </li>
+  );
 }
 
 type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void;
@@ -90,7 +91,10 @@ function App() {
 
   return (
     <>
-      <h1 className='text-3xl font-bold underline'>Infinite Scroll Demo</h1>
+      <h1 className='title'>
+        <div>Infinite Scroll Demo</div>
+        <div className='small'>{usersInfo.length}</div>
+      </h1>
       <div className='scrollable'>
         <ul className='page'>
           {usersInfo.map((u, i) => (
@@ -100,7 +104,7 @@ function App() {
             />
           ))}
         </ul>
-        {pageNum < 10 ? (
+        {pageNum < 40 ? (
           loading ? (
             <div className='end-of-list'>Loading more...</div>
           ) : (
