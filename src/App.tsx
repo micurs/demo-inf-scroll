@@ -37,7 +37,7 @@ function UserInfo({ user }: { user: UserInfo}) {
 type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void;
 
 const ioOption = {
-  threshold: 1.0,
+  threshold: 0.1,
   rootMargin: '0px',
 };
 
@@ -47,22 +47,24 @@ function App() {
   const [pageNum, setPageNum] = React.useState<number>(1);
   const loadMore = React.useRef<HTMLDivElement>(null);
 
-  const intersectCb = React.useCallback( (entries: IntersectionObserverEntry[], _observer: IntersectionObserver) => {
-    const entry = entries[0];
-    console.log('intersectCb', entry.target.innerHTML, entry.isIntersecting, entry.intersectionRatio);
-    if (entry.isIntersecting && entry.intersectionRatio >= 1.0) {
-      console.log('Increase Page:' , pageNum + 1);
-      setPageNum((p) => p + 1);
-    }
-  }, [pageNum]);
+  const intersectCb = React.useCallback(
+    (entries: IntersectionObserverEntry[], _observer: IntersectionObserver) => {
+      const entry = entries[0];
+      console.log('intersectCb', entry.intersectionRatio);
+      if (entry.isIntersecting && entry.intersectionRatio > 0.0) {
+        console.log('Increase Page:', pageNum + 1);
+        setPageNum((p) => p + 1);
+      }
+    },
+    [pageNum]
+  );
 
-  const io = React.useRef( new IntersectionObserver(intersectCb, ioOption));
+  const io = React.useRef(new IntersectionObserver(intersectCb, ioOption));
 
   const loadUsers = async (pageNum: number) => {
     setLoading(true);
-    loadMoreUsers(pageNum)
-    .then((data) => {
-      setUsersInfo((u)=> [ ...u, ...data.results]);
+    loadMoreUsers(pageNum).then((data) => {
+      setUsersInfo((u) => [...u, ...data.results]);
       setLoading(false);
     });
   };
@@ -74,9 +76,9 @@ function App() {
   }, [pageNum]);
 
   React.useEffect(() => {
-    console.log('Loading:', loading);
+    // console.log('Loading:', loading);
     if (!loading) {
-      console.log('Setting up intersection observer ');
+      // console.log('Setting up intersection observer ');
       const cio = io.current;
       const lm = loadMore.current;
       lm && cio.observe(lm);
@@ -88,21 +90,33 @@ function App() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold underline">Infinite Scroll Demo</h1>
-      <div className="scrollable">
-        <ul className="page">
-          {usersInfo.map((u, i) => <UserInfo key={i} user={u} />)}
+      <h1 className='text-3xl font-bold underline'>Infinite Scroll Demo</h1>
+      <div className='scrollable'>
+        <ul className='page'>
+          {usersInfo.map((u, i) => (
+            <UserInfo
+              key={i}
+              user={u}
+            />
+          ))}
         </ul>
-        {pageNum < 10
-        ? (loading
-          ? <div className="end-of-list">Loading more...</div>
-          : <div ref={loadMore} className="end-of-list">If you see this it must Load more</div>
+        {pageNum < 10 ? (
+          loading ? (
+            <div className='end-of-list'>Loading more...</div>
+          ) : (
+            <div
+              ref={loadMore}
+              className='end-of-list'
+            >
+              If you see this it must Load more
+            </div>
           )
-        : <div className="end-of-list">End of list</div>
-        }
+        ) : (
+          <div className='end-of-list'>End of list</div>
+        )}
       </div>
     </>
-  )
+  );
 }
 
 export default App
