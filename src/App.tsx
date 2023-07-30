@@ -12,24 +12,30 @@ const loadMoreUsers = (page: number) => {
 
 interface UserInfo {
   name: {
+    title: string;
     first: string;
     last: string;
   };
   picture: {
     medium: string;
+    large: string;
   };
 }
 
 function UserInfo({ user }: { user: UserInfo }) {
   return (
-    <li className='user-info'>
-      <img
-        src={user.picture.medium}
-        className='w-16 h-16 rounded-full border-2 border-green-600'
-        alt='user'
-      />
-      <div className='user-name'>
-        {user.name.first} {user.name.last}
+    <li className='card w-40 bg-base-100 card-compact shadow-x mr-6 my-3 p-0'>
+      <figure>
+        <img
+          className='w-full'
+          src={user.picture.large}
+          alt='user'
+        />
+      </figure>
+      <div className='card-body'>
+        <h2>
+          {user.name.title} {user.name.first} {user.name.last}
+        </h2>
       </div>
     </li>
   );
@@ -108,15 +114,37 @@ function App() {
   const listBottom = (status: ObserverStatus) => {
     switch (status) {
       case 'loading':
-        return <div className='end-of-list'>Loading more...</div>;
+        return (
+          <div className='alert alert-info my-4 mx-auto w-96'>
+            <span className='loading loading-infinity loading-lg'></span>
+            Loading more...
+          </div>
+        );
       case 'complete':
-        return <div className='end-of-list'>End of list</div>;
+        return (
+          <div className='alert alert-success my-4 mx-auto w-96'>
+            <svg
+              xmlns='http://www.w3.org/2000/svg'
+              className='stroke-current shrink-0 h-6 w-6'
+              fill='none'
+              viewBox='0 0 24 24'
+            >
+              <path
+                stroke-linecap='round'
+                stroke-linejoin='round'
+                stroke-width='2'
+                d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+              />
+            </svg>
+            <span>End of list</span>
+          </div>
+        );
       case 'ready':
         return (
           <div
             id='load-more'
             ref={loadMore}
-            className='end-of-list'
+            className='alert alert-warning my-4 mx-auto w-96'
           >
             More users to read ...
           </div>
