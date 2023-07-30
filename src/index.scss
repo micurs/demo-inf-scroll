@@ -54,7 +54,7 @@ div#root {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-    
+
       div.small {
         font-size: 0.6em;
       }
@@ -63,7 +63,6 @@ div#root {
     flex-grow: 1;
     flex-basis: 0;
     background-color: #f0f0f0;
-    border: solid 1px red;
     background-color: #999;
     overflow-y: scroll;
     overflow-x: hidden;
@@ -75,6 +74,8 @@ div#root {
     div.end-of-list {
       height: 60px;
       line-height: 60px;
+      font-size: 2em;
+        margin: 10px 0px;
     }
 
     ul.page {
