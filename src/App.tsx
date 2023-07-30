@@ -5,7 +5,7 @@ import axios from 'axios';
 import './App.css'
 
 const loadMoreUsers = (page: number) => {
-  return axios.get('https://randomuser.me/api/?page=${page}&results=20&seed=rtx${page}').then((res) => {
+  return axios.get('https://randomuser.me/api/?page=${page}&results=40&seed=rtx${page}').then((res) => {
     return res.data;
   });
 };
@@ -39,55 +39,83 @@ type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], obser
 
 const ioOption = {
   threshold: 0.1,
-  rootMargin: '0px',
+  rootMargin: '10px',
 };
 
-function App() {
-  const [usersInfo, setUsersInfo] = React.useState<UserInfo[]>([]);
-  const [loading, setLoading] = React.useState(false);
+type LoadingPageCb = (pageNum: number) => Promise<void>;
+type ObserverStatus = 'loading' | 'complete' | 'ready';
+
+/**
+ *
+ * @param loadingPageCb - Function to call when the loadMore is visible
+ * @param loadMoreEl - Ref to the element that will be observed
+ * @returns
+ */
+const useIntersectionObserver = (loadingPageCb: LoadingPageCb, loadMoreEl: React.RefObject<HTMLDivElement>): ObserverStatus => {
   const [pageNum, setPageNum] = React.useState<number>(1);
-  const loadMore = React.useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = React.useState(false);
 
   const intersectCb = React.useCallback(
-    (entries: IntersectionObserverEntry[], _observer: IntersectionObserver) => {
+    (entries: IntersectionObserverEntry[]) => {
       const entry = entries[0];
       console.log('intersectCb', entry.intersectionRatio);
       if (entry.isIntersecting && entry.intersectionRatio > 0.0) {
-        console.log('Increase Page:', pageNum + 1);
-        setPageNum((p) => p + 1);
+        setLoading(true);
+        loadingPageCb(pageNum + 1).then(() => {
+          console.log('Increase Page:', pageNum + 1);
+          setLoading(false);
+          setPageNum((p) => p + 1);
+        });
       }
     },
-    [pageNum]
+    [pageNum, loadingPageCb]
   );
 
   const io = React.useRef(new IntersectionObserver(intersectCb, ioOption));
 
-  const loadUsers = async (pageNum: number) => {
-    setLoading(true);
-    loadMoreUsers(pageNum).then((data) => {
+  React.useEffect(() => {
+    if (!loading && loadMoreEl.current) {
+      const cio = io.current;
+      const el = loadMoreEl.current;
+      cio.observe(el);
+      return () => {
+        cio.unobserve(el);
+      };
+    }
+  }, [loading, loadMoreEl]);
+
+  return loading ? 'loading' : pageNum < 20 ? 'ready' : 'complete';
+};
+
+function App() {
+  const [usersInfo, setUsersInfo] = React.useState<UserInfo[]>([]);
+  const loadMore = React.useRef<HTMLDivElement>(null);
+
+  const loadUsers = (pageNum: number) => {
+    return loadMoreUsers(pageNum).then((data) => {
       setUsersInfo((u) => [...u, ...data.results]);
-      setLoading(false);
     });
   };
 
-  React.useEffect(() => {
-    if (pageNum < 40) {
-      loadUsers(pageNum);
-    }
-  }, [pageNum]);
+  const status = useIntersectionObserver(loadUsers, loadMore);
 
-  React.useEffect(() => {
-    // console.log('Loading:', loading);
-    if (!loading) {
-      // console.log('Setting up intersection observer ');
-      const cio = io.current;
-      const lm = loadMore.current;
-      lm && cio.observe(lm);
-      return () => {
-        lm && cio.unobserve(lm);
-      };
+  const listBottom = (status: ObserverStatus) => {
+    switch (status) {
+      case 'loading':
+        return <div className='end-of-list'>Loading more...</div>;
+      case 'complete':
+        return <div className='end-of-list'>End of list</div>;
+      case 'ready':
+        return (
+          <div
+            ref={loadMore}
+            className='end-of-list'
+          >
+            If you see this it must Load more
+          </div>
+        );
     }
-  }, [loading, loadMore]);
+  };
 
   return (
     <>
@@ -104,20 +132,7 @@ function App() {
             />
           ))}
         </ul>
-        {pageNum < 40 ? (
-          loading ? (
-            <div className='end-of-list'>Loading more...</div>
-          ) : (
-            <div
-              ref={loadMore}
-              className='end-of-list'
-            >
-              If you see this it must Load more
-            </div>
-          )
-        ) : (
-          <div className='end-of-list'>End of list</div>
-        )}
+        {listBottom(status)}
       </div>
     </>
   );
