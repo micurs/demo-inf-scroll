@@ -4,11 +4,15 @@ import axios from 'axios';
 
 import './App.css'
 
-const loadMoreUsers = (page: number) => {
-  return axios.get(`https://randomuser.me/api/?page=${page}&results=12&seed=rtx${page}`).then((res) => {
-    return res.data;
-  });
-};
+interface UsersData {
+  info: {
+    seed: string;
+    page: number;
+    results: number;
+    version: string;
+  };
+  results: UserInfo[];
+}
 
 interface UserInfo {
   name: {
@@ -22,6 +26,25 @@ interface UserInfo {
   };
 }
 
+type LoadingPageCb = (page: number) => Promise<void>;
+type ObserverStatus = 'loading' | 'complete' | 'ready';
+
+/**
+ * Load users from the randomuser.me API
+ * @param page - Page number to load
+ * @returns the response data
+ */
+const loadMoreUsers = (page: number): Promise<UsersData> => {
+  return axios.get(`https://randomuser.me/api/?page=${page}&results=36&seed=rtx${page}`).then((res) => {
+    return res.data;
+  });
+};
+
+/**
+ * React component to display a user
+ * @param param0 - { user: UserInfo }
+ * @returns
+ */
 function UserInfo({ user }: { user: UserInfo }) {
   return (
     <li className='card w-40 bg-base-100 card-compact shadow-x mr-6 my-3 p-0'>
@@ -41,15 +64,10 @@ function UserInfo({ user }: { user: UserInfo }) {
   );
 }
 
-type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void;
-
 const ioOption = {
   threshold: 0.01,
   rootMargin: '50px',
 };
-
-type LoadingPageCb = (page: number) => Promise<void>;
-type ObserverStatus = 'loading' | 'complete' | 'ready';
 
 /**
  *
@@ -65,8 +83,11 @@ const useIntersectionObserver = (
   const [pageNum, setPageNum] = React.useState(0);
   const [io, setIo] = React.useState<IntersectionObserver | null>(null);
 
+  // Initialize the IntersectionObserver once the loadingPageCb is set
   React.useEffect(() => {
+    // internal page counter
     let page = 0;
+    // Internal callback for the IntersectionObserver
     const intersectCb = (entries: IntersectionObserverEntry[]) => {
       const entry = entries[0];
       if (entry.isIntersecting && entry.intersectionRatio > 0.0) {
@@ -79,11 +100,11 @@ const useIntersectionObserver = (
         });
       }
     };
-
-    console.log('Creating IntersectionObserver');
+    // Create the IntersectionObserver and set it to state
     setIo(new IntersectionObserver(intersectCb, ioOption));
   }, [loadingPageCb]);
 
+  // Observe the loadMore element once the IntersectionObserver is set
   React.useEffect(() => {
     if (!loading && io && loadMoreEl.current) {
       const cio = io;
@@ -103,6 +124,7 @@ function App() {
   const [usersInfo, setUsersInfo] = React.useState<UserInfo[]>([]);
   const loadMore = React.useRef<HTMLDivElement>(null);
 
+  // Load the first page of users - we make sure to use the ref to the loadMore
   const loadUsers = React.useRef((pageNum: number) => {
     return loadMoreUsers(pageNum).then((data) => {
       setUsersInfo((u) => [...u, ...data.results]);
