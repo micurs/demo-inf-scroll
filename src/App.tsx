@@ -44,8 +44,8 @@ function UserInfo({ user }: { user: UserInfo }) {
 type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void;
 
 const ioOption = {
-  threshold: 0.1,
-  rootMargin: '1px',
+  threshold: 0.01,
+  rootMargin: '50px',
 };
 
 type LoadingPageCb = (page: number) => Promise<void>;
@@ -130,9 +130,9 @@ function App() {
               viewBox='0 0 24 24'
             >
               <path
-                stroke-linecap='round'
-                stroke-linejoin='round'
-                stroke-width='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth='2'
                 d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
               />
             </svg>
