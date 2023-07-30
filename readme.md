@@ -4,7 +4,8 @@ This is a Vite/React/TypeScript project that demonstrate how to use
 the `IntersectionObserver` API to implement an infinite scrolling
 feature.
 
-![image](https://github.com/micurs/demo-inf-scroll/assets/1569225/450581fc-4c11-442c-8586-d60bfa9e5bd7)
+![image](https://github.com/micurs/demo-inf-scroll/assets/1569225/bfce3861-ae8c-49e6-ad45-3a7af76b8af5)
+
 
 ## Build and run the demo
 
