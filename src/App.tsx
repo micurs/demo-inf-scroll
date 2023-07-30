@@ -5,7 +5,7 @@ import axios from 'axios';
 import './App.css'
 
 const loadMoreUsers = (page: number) => {
-  return axios.get('https://randomuser.me/api/?page=${page}&results=40&seed=rtx${page}').then((res) => {
+  return axios.get(`https://randomuser.me/api/?page=${page}&results=12&seed=rtx${page}`).then((res) => {
     return res.data;
   });
 };
@@ -39,10 +39,10 @@ type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], obser
 
 const ioOption = {
   threshold: 0.1,
-  rootMargin: '10px',
+  rootMargin: '1px',
 };
 
-type LoadingPageCb = (pageNum: number) => Promise<void>;
+type LoadingPageCb = (page: number) => Promise<void>;
 type ObserverStatus = 'loading' | 'complete' | 'ready';
 
 /**
@@ -51,53 +51,59 @@ type ObserverStatus = 'loading' | 'complete' | 'ready';
  * @param loadMoreEl - Ref to the element that will be observed
  * @returns
  */
-const useIntersectionObserver = (loadingPageCb: LoadingPageCb, loadMoreEl: React.RefObject<HTMLDivElement>): ObserverStatus => {
-  const [pageNum, setPageNum] = React.useState<number>(1);
+const useIntersectionObserver = (
+  loadingPageCb: LoadingPageCb,
+  loadMoreEl: React.RefObject<HTMLDivElement>
+): [ObserverStatus, number] => {
   const [loading, setLoading] = React.useState(false);
-
-  const intersectCb = React.useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const entry = entries[0];
-      console.log('intersectCb', entry.intersectionRatio);
-      if (entry.isIntersecting && entry.intersectionRatio > 0.0) {
-        setLoading(true);
-        loadingPageCb(pageNum + 1).then(() => {
-          console.log('Increase Page:', pageNum + 1);
-          setLoading(false);
-          setPageNum((p) => p + 1);
-        });
-      }
-    },
-    [pageNum, loadingPageCb]
-  );
-
-  const io = React.useRef(new IntersectionObserver(intersectCb, ioOption));
+  const [pageNum, setPageNum] = React.useState(0);
+  const [io, setIo] = React.useState<IntersectionObserver | null>(null);
 
   React.useEffect(() => {
-    if (!loading && loadMoreEl.current) {
-      const cio = io.current;
+    let page = 0;
+    const intersectCb = (entries: IntersectionObserverEntry[]) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && entry.intersectionRatio > 0.0) {
+        setLoading(true);
+        page += 1;
+        loadingPageCb(page).then(() => {
+          console.log('Loaded page', page);
+          setLoading(false);
+          setPageNum(page);
+        });
+      }
+    };
+
+    console.log('Creating IntersectionObserver');
+    setIo(new IntersectionObserver(intersectCb, ioOption));
+  }, [loadingPageCb]);
+
+  React.useEffect(() => {
+    if (!loading && io && loadMoreEl.current) {
+      const cio = io;
       const el = loadMoreEl.current;
+      console.log('Observing element', el.id);
       cio.observe(el);
       return () => {
         cio.unobserve(el);
       };
     }
-  }, [loading, loadMoreEl]);
+  }, [loading, loadMoreEl, io]);
 
-  return loading ? 'loading' : pageNum < 20 ? 'ready' : 'complete';
+  return [loading ? 'loading' : pageNum < 20 ? 'ready' : 'complete', pageNum];
 };
 
 function App() {
   const [usersInfo, setUsersInfo] = React.useState<UserInfo[]>([]);
   const loadMore = React.useRef<HTMLDivElement>(null);
 
-  const loadUsers = (pageNum: number) => {
+  const loadUsers = React.useRef((pageNum: number) => {
     return loadMoreUsers(pageNum).then((data) => {
       setUsersInfo((u) => [...u, ...data.results]);
     });
-  };
+  });
 
-  const status = useIntersectionObserver(loadUsers, loadMore);
+  const [status, page] = useIntersectionObserver(loadUsers.current, loadMore);
 
   const listBottom = (status: ObserverStatus) => {
     switch (status) {
@@ -108,10 +114,11 @@ function App() {
       case 'ready':
         return (
           <div
+            id='load-more'
             ref={loadMore}
             className='end-of-list'
           >
-            If you see this it must Load more
+            More users to read ...
           </div>
         );
     }
@@ -120,8 +127,10 @@ function App() {
   return (
     <>
       <h1 className='title'>
-        <div>Infinite Scroll Demo</div>
-        <div className='small'>{usersInfo.length}</div>
+        <div className='text-3xl font-bold p-2'>Infinite Scroll Demo</div>
+        <div className='text-sm'>
+          {page}/{usersInfo.length}
+        </div>
       </h1>
       <div className='scrollable'>
         <ul className='page'>
