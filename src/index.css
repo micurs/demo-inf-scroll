@@ -90,34 +90,3 @@ ul.page {
   justify-content: center;
 }
 
-li.user-info {
-  border-radius: 11px;
-  box-sizing: border-box;
-  width: 580px;
-  margin: 8px 0px 0px 8px;
-  padding: 0px 10px;
-  display: flex;
-  flex-direction: row;
-  justify-content: left;
-  align-items: center;
-  height: 80px;
-  background-color: #ddd;
-  border: solid 2px rgba(0, 0, 100, 1);
-  box-shadow: 2px 2px 7px rgba(0, 0, 100, 0.55);
-  color: #333;
-
-}
-
-li.user-info img {
-  display: block;
-  max-height: 60px;
-  margin: 2px;
-  border-radius: 50%;
-  border: solid 3px #404090;
-}
-
-li.user-info div.user-name {
-  margin-left: 10px;
-  font-size: 1.2em;
-  font-weight: bold;
-}
