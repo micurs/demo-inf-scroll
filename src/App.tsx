@@ -2,127 +2,38 @@ import React from 'react';
 import axios from 'axios';
 // import { throttle } from 'throttle-debounce';
 
-import './App.css'
-
-interface UsersData {
-  info: {
-    seed: string;
-    page: number;
-    results: number;
-    version: string;
-  };
-  results: UserInfo[];
-}
-
-interface UserInfo {
-  name: {
-    title: string;
-    first: string;
-    last: string;
-  };
-  picture: {
-    medium: string;
-    large: string;
-  };
-}
-
-type LoadingPageCb = (page: number) => Promise<void>;
-type ObserverStatus = 'loading' | 'complete' | 'ready';
+import './App.css';
+import { Gender, GenderSelector } from './components/gender-selector';
+import { ObserverStatus, useIntersectionObserver } from './hooks/use-intersection-observer';
+import { UserInfo, UsersData } from './types';
+import { UserBadge } from './components/user-badge';
 
 /**
- * Load users from the randomuser.me API
+ * Load users from the `randomuser.me` API
  * @param page - Page number to load
  * @returns the response data
  */
 const loadMoreUsers = (page: number): Promise<UsersData> => {
-  return axios.get(`https://randomuser.me/api/?page=${page}&results=36&seed=rtx${page}`).then((res) => {
+  return axios.get(`https://randomuser.me/api/?page=${page}&results=8&seed=rtx${page}`).then((res) => {
     return res.data;
   });
 };
 
-/**
- * React component to display a user
- * @param param0 - { user: UserInfo }
- * @returns
- */
-function UserInfo({ user }: { user: UserInfo }) {
-  return (
-    <li className='card w-40 bg-base-100 card-compact shadow-x mr-6 my-3 p-0'>
-      <figure>
-        <img
-          className='w-full'
-          src={user.picture.large}
-          alt='user'
-        />
-      </figure>
-      <div className='card-body'>
-        <h2>
-          {user.name.title} {user.name.first} {user.name.last}
-        </h2>
-      </div>
-    </li>
-  );
-}
-
-const ioOption = {
-  threshold: 0.01,
-  rootMargin: '50px',
-};
-
-/**
- *
- * @param loadingPageCb - Function to call when the loadMore is visible
- * @param loadMoreEl - Ref to the element that will be observed
- * @returns
- */
-const useIntersectionObserver = (
-  loadingPageCb: LoadingPageCb,
-  loadMoreEl: React.RefObject<HTMLDivElement>
-): [ObserverStatus, number] => {
-  const [loading, setLoading] = React.useState(false);
-  const [pageNum, setPageNum] = React.useState(0);
-  const [io, setIo] = React.useState<IntersectionObserver | null>(null);
-
-  // Initialize the IntersectionObserver once the loadingPageCb is set
-  React.useEffect(() => {
-    // internal page counter
-    let page = 0;
-    // Internal callback for the IntersectionObserver
-    const intersectCb = (entries: IntersectionObserverEntry[]) => {
-      const entry = entries[0];
-      if (entry.isIntersecting && entry.intersectionRatio > 0.0) {
-        setLoading(true);
-        page += 1;
-        loadingPageCb(page).then(() => {
-          console.log('Loaded page', page);
-          setLoading(false);
-          setPageNum(page);
-        });
-      }
-    };
-    // Create the IntersectionObserver and set it to state
-    setIo(new IntersectionObserver(intersectCb, ioOption));
-  }, [loadingPageCb]);
-
-  // Observe the loadMore element once the IntersectionObserver is set
-  React.useEffect(() => {
-    if (!loading && io && loadMoreEl.current) {
-      const cio = io;
-      const el = loadMoreEl.current;
-      console.log('Observing element', el.id);
-      cio.observe(el);
-      return () => {
-        cio.unobserve(el);
-      };
-    }
-  }, [loading, loadMoreEl, io]);
-
-  return [loading ? 'loading' : pageNum < 20 ? 'ready' : 'complete', pageNum];
+const matchGender = (matchGender: Gender) => (user: UserInfo) => {
+  return matchGender === 'all' || user.gender === matchGender;
 };
 
 function App() {
   const [usersInfo, setUsersInfo] = React.useState<UserInfo[]>([]);
   const loadMore = React.useRef<HTMLDivElement>(null);
+  const [gender, setGender] = React.useState<Gender>('all');
+
+  const handleGenderSelect = (newGender: Gender) => {
+    if (newGender !== gender) {
+      setGender(newGender);
+      console.log('Gender', newGender);
+    }
+  };
 
   // Load the first page of users - we make sure to use the ref to the loadMore
   const loadUsers = React.useRef((pageNum: number) => {
@@ -176,16 +87,19 @@ function App() {
 
   return (
     <>
-      <h1 className='title'>
-        <div className='text-3xl font-bold p-2'>Infinite Scroll Demo</div>
+      <h1 className='title bg-neutral border-accent border-b '>
+        <div className='text-2xl font-bold p-2'>Infinite Scroll Demo</div>
+        <div className='text-sm border border-base-100 flex-1 rounded-lg leading-8 mx-4 flex justify-around'>
+          <GenderSelector onSelect={handleGenderSelect} />
+        </div>
         <div className='text-sm'>
           {page}/{usersInfo.length}
         </div>
       </h1>
-      <div className='scrollable'>
+      <div className='scrollable bg-base-100'>
         <ul className='page'>
-          {usersInfo.map((u, i) => (
-            <UserInfo
+          {usersInfo.filter(matchGender(gender)).map((u, i) => (
+            <UserBadge
               key={i}
               user={u}
             />
@@ -197,4 +111,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
